@@ -1,16 +1,32 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Vite + TS</title>
-  </head>
-  <body>
-    <div id="app">
-      <button id="btn">Click me</button>
-      <span id="text"></span>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #media {
+            position: fixed;
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<div id="media"></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
 </html>
