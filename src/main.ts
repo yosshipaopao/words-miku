@@ -30,13 +30,14 @@ player.addListener({
     onTimeUpdate: (position: number) => {
         const se = max(up_words.searchTime(position), 0);
         if (tween) tween.destroy();
-        //if (up_text_group_dragging) return;
+        if (progressbar_dragging) return;
         tween = new Konva.Tween({
             node: up_text_group,
             duration: .2,
             x: -up_words.positions[se],
         });
         tween.play();
+        progress_point.x(position / player.video.duration * stage.width() / 2 / stage.scaleX());
     },
     //onThrottledTimeUpdate: (position: number) =>
     //    console.log("再生位置のアップデート:", position, "ミリ秒"),
@@ -56,7 +57,6 @@ player.addListener({
         }
     },
     onVideoReady: (v: IVideo) => {
-
         const base_size = min(window.innerWidth / 16, window.innerHeight / 9);
         stage = new Konva.Stage({
             container: 'app',
@@ -95,25 +95,87 @@ player.addListener({
             fill: "blue"
         });
         bg_layer.add(main_rect);
+        const control_group = new Konva.Group({
+            y: (stage.height() - base_size) / stage.scaleY(),
+            offsetY: -base_size / 2 / stage.scaleY(),
+        });
         const play_button = new Konva.Circle({
             width: base_size * .8 / stage.scaleX(),
             height: base_size * .8 / stage.scaleX(),
             x: stage.width() / 9 / stage.scaleX(),
-            y: (stage.height() - base_size) / stage.scaleY(),
             offsetX: -base_size / 2 / stage.scaleX(),
-            offsetY: -base_size / 2 / stage.scaleY(),
             fill: 'white',
             stroke: 'black',
             strokeWidth: 4 / stage.scaleX(),
         });
-        play_button.on("mouseover",mouse.pointer);
-        play_button.on("mouseout",mouse.default);
+        play_button.on("mouseover", mouse.pointer);
+        play_button.on("mouseout", mouse.default);
         play_button.on("click", () => {
-            if (player.video) {
-                player.isPlaying ? player.requestPause() : player.requestPlay();
-            }
-        })
-        bg_layer.add(play_button);
+            if (player.video) player.isPlaying ? player.requestPause() : player.requestPlay();
+        });
+        control_group.add(play_button);
+
+        const audio_control = new Konva.Group({
+            x: stage.width() * 7 / 9 / stage.scaleX()
+        });
+        const audio_bar = new Konva.Line({
+            points: [0, 0, stage.width() / 9 / stage.scaleX(), 0],
+            stroke: 'red',
+            strokeWidth: 10 / stage.scaleY(),
+            lineCap: 'round',
+            lineJoin: 'round',
+        });
+        audio_control.add(audio_bar);
+        const audio_point = new Konva.Circle({
+            x: stage.width() / 9 / stage.scaleX() * player.volume / 100,
+            width: base_size * .4 / stage.scaleX(),
+            height: base_size * .4 / stage.scaleX(),
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 4 / stage.scaleX(),
+            draggable: true,
+        });
+        audio_point.on("dragmove", () => {
+            audio_point.y(0);
+            audio_point.x(min(max(audio_point.x(), 0), stage.width() / 9 / stage.scaleX()));
+            player.volume = audio_point.x() * 100 / (stage.width() / 9 / stage.scaleX());
+        });
+        audio_control.add(audio_point);
+        control_group.add(audio_control);
+
+        const progress_control = new Konva.Group({
+            x: stage.width() * 2 / 9 / stage.scaleX()
+        });
+        const progress_bar = new Konva.Line({
+            points: [0, 0, stage.width() / 2 / stage.scaleX(), 0],
+            stroke: 'red',
+            strokeWidth: 10 / stage.scaleY(),
+            lineCap: 'round',
+            lineJoin: 'round',
+        });
+        progress_control.add(progress_bar);
+        progress_point = new Konva.Circle({
+            x: 0,
+            width: base_size * .4 / stage.scaleX(),
+            height: base_size * .4 / stage.scaleX(),
+            fill: 'white',
+            stroke: 'black',
+            strokeWidth: 4 / stage.scaleX(),
+            draggable: true,
+        });
+        progress_control.on("dragstart", () => progressbar_dragging = true);
+        progress_control.on("dragend", () => {
+            player.requestMediaSeek(progress_point.x() / stage.width() / 2 / stage.scaleX() * player.video.duration);
+            progressbar_dragging = false;
+        });
+        progress_point.on("dragmove", () => {
+            progress_point.y(0);
+            progress_point.x(min(max(progress_point.x(), 0), stage.width() / 2 / stage.scaleX()));
+        });
+        progress_control.add(progress_point);
+        control_group.add(progress_control);
+
+        bg_layer.add(control_group);
 
         stage.add(bg_layer);
 
@@ -123,13 +185,6 @@ player.addListener({
             offsetY: -base_size / 2 / stage.scaleX(),
             offsetX: -stage.width() / 2 / stage.scaleX(),
         });
-        //up_text_group.on("dragmove", () => up_text_group.y(0));
-        //up_text_group.on("dragstart", () => up_text_group_dragging = true);
-        //up_text_group.on("dragend", async () => {
-        //    player.requestMediaSeek(up_words.times[max(up_words.searchPos(-up_text_group.x()), 0)]);
-        //    up_text_group_dragging = false;
-        //});
-
         main_layer.add(up_text_group);
         stage.add(main_layer);
 
@@ -149,5 +204,6 @@ let stage: Konva.Stage;
 let bg_layer: Konva.Layer;
 let main_layer: Konva.Layer;
 let up_text_group: Konva.Group;
+let progress_point: Konva.Circle;
 let up_words = new Words();
-let up_text_group_dragging = false;
+let progressbar_dragging = false;
