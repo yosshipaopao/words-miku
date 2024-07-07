@@ -1,3 +1,4 @@
+"use strict";
 import Konva from "konva";
 import type {ITextUnit} from "textalive-app-api";
 
@@ -17,13 +18,15 @@ export const mouse = {
 export const new_up_text = (t: string): Konva.Text => {
     const text = new Konva.Text({
         text: t,
-        fontSize: 60,
+        scale: {x:.5,y:.5},
+        fontSize: 120,
         fontFamily: 'Calibri',
         fill: 'green',
-        draggable: true
+        draggable: true,
+        //rotation: 45
     });
     text.offsetX(text.width() / 2);
-    text.offsetY(text.height() / 2);
+    text.offsetY(text.height() / 2 );
     return text;
 }
 
@@ -43,8 +46,8 @@ export class Word {
     }
 
     setPos(x: number): number {
-        this.text.x(x + this.text.width() / 2);
-        return this.text.width();
+        this.text.x(x + this.text.width() / 2 * this.text.scaleX());
+        return this.text.width() * this.text.scaleX();
     }
 }
 
@@ -98,3 +101,14 @@ export class Words {
         return min(left - 1, this.positions.length - 1);
     }
 }
+
+export const colors = [
+    "white",
+    "black",
+    "#008899",
+    "#dd88bb",
+    "#eeaa00",
+    "#ffee77",
+    "#6655cc",
+    "#cb213c",
+]

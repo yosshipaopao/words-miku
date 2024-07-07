@@ -1,4 +1,5 @@
-import {min, max, Word, Words, mouse} from "./utils.ts";
+"use strict";
+import {min, max, Word, Words, mouse, colors} from "./utils.ts";
 import {IChar, IPhrase, IWord, Player} from "textalive-app-api";
 import Konva from "konva";
 import type {IPlayerApp, IVideo} from "textalive-app-api";
@@ -67,11 +68,17 @@ player.addListener({
         });
 
         const bg_layer = new Konva.Layer();
+        // Main
+        main_layer = new Konva.Layer();
+        focus_rect = new Konva.Rect({
+            stroke: "black",
+            strokeWidth: 4,
+            dash: [10, 10]
+        });
+        main_layer.add(focus_rect);
         make_bg(bg_layer);
         stage.add(bg_layer);
 
-        // Main
-        main_layer = new Konva.Layer();
 
         // Phrase
         words_groups.push(create_words_group(v.firstPhrase));
@@ -108,13 +115,17 @@ const make_bg = (bg_layer: Konva.Layer) => {
         fill: 'yellow'
     });
     bg_layer.add(down_line);
-    const main_rect = new Konva.Rect({
+    main_rect = new Konva.Rect({
         width: stage.width() * 7 / 9 / stage.scaleX(),
         height: stage.height() * 7 / 9 / stage.scaleX(),
         x: stage.width() / 9 / stage.scaleX(),
         y: base_size / stage.scaleY(),
-        fill: "blue"
+        fill: "blue",
+        stroke: "black",
+        strokeWidth: 4,
     });
+    main_rect.on("click", () => change_focus(main_rect));
+    change_focus(main_rect);
     bg_layer.add(main_rect);
     const control_group = new Konva.Group({
         y: (stage.height() - base_size) / stage.scaleY(),
@@ -122,6 +133,18 @@ const make_bg = (bg_layer: Konva.Layer) => {
     });
     make_control(control_group);
     bg_layer.add(control_group);
+    const colorpalet_group = new Konva.Group({
+        x: stage.width() * 8 / 9 / stage.scaleX(),
+        y: base_size / stage.scaleY() + 20,
+    });
+    make_colorpalet(colorpalet_group);
+    bg_layer.add(colorpalet_group);
+    const transform_control_group = new Konva.Group({
+        x: stage.width() / 2 / 9 / stage.scaleX(),
+        y: base_size / stage.scaleY() + 20,
+    });
+    make_transform_control(transform_control_group);
+    bg_layer.add(transform_control_group);
 }
 const make_control = (control_group: Konva.Group) => {
     const change_mode_button = new Konva.Circle({
@@ -194,7 +217,6 @@ const make_control = (control_group: Konva.Group) => {
     });
     progress_control.add(progress_bar);
     progress_point = new Konva.Circle({
-        x: 0,
         width: base_size * .4 / stage.scaleX(),
         height: base_size * .4 / stage.scaleX(),
         fill: 'white',
@@ -222,9 +244,100 @@ const make_control = (control_group: Konva.Group) => {
     progress_control.add(progress_point);
     control_group.add(progress_control);
 }
+const make_colorpalet = (colorpalet_group: Konva.Group) => {
+    const size = stage.width() / 2 / 9 / stage.scaleX();
+    for (let i = 0; i < colors.length; i++) {
+        const color = colors[i];
+        const rect = new Konva.Rect({
+            x: (i % 2 == 0 ? 0 : 1) * (size) + size * .1,
+            y: (Math.floor(i / 2)) * size,
+            width: size * .8,
+            height: size * .8,
+            fill: color,
+            stroke: "black",
+            strokeWidth: 4
+        });
+        rect.on("mouseenter", mouse.pointer);
+        rect.on("mouseleave", mouse.default);
+        rect.on("click", () => {
+            focussing_shape.fill(color);
+        })
+        colorpalet_group.add(rect);
+    }
+}
+const make_transform_control = (transform_control_group: Konva.Group) => {
+    const size_control_group = new Konva.Group({
+        y: base_size / 2 / stage.scaleY(),
+    });
+    const size_control_bar = new Konva.Line({
+        points: [0, 0, 0, base_size * 2.5 / stage.scaleY()],
+        stroke: 'red',
+        strokeWidth: 10,
+        lineCap: 'round',
+        lineJoin: 'round',
+    })
+    size_control_group.add(size_control_bar);
+    size_control_point = new Konva.Circle({
+        width: base_size * .4 / stage.scaleX(),
+        height: base_size * .4 / stage.scaleX(),
+        fill: 'white',
+        stroke: 'black',
+        strokeWidth: 4,
+        draggable: true
+    });
+    size_control_point.on("mouseenter", mouse.pointer);
+    size_control_point.on("mouseleave", mouse.default);
+    size_control_point.on("dragmove", () => {
+        size_control_point.x(0);
+        size_control_point.y(min(max(size_control_point.y(), 0), base_size * 2.5 / stage.scaleY()));
+        if (focussing_shape != main_rect) {
+            let new_scale = 1.9;
+            new_scale *= size_control_point.y() / (base_size * 2.5 / stage.scaleY());
+            new_scale += .1;
+            focussing_shape.scale({x: new_scale, y: new_scale});
+            console.log("scale shape");
+            transform_focus_rect();
+        }
+    });
+    size_control_group.add(size_control_point);
+    transform_control_group.add(size_control_group);
+    const rotate_control_group = new Konva.Group({
+        y: ((stage.height() - base_size) / 2) / stage.scaleY(),
+    });
+    const rotate_control_bar = new Konva.Line({
+        points: [0, 0, 0, base_size * 2.5 / stage.scaleY()],
+        stroke: 'red',
+        strokeWidth: 10,
+        lineCap: 'round',
+        lineJoin: 'round',
+    })
+    rotate_control_group.add(rotate_control_bar);
+    rotate_control_point = new Konva.Circle({
+        width: base_size * .4 / stage.scaleX(),
+        height: base_size * .4 / stage.scaleX(),
+        fill: 'white',
+        stroke: 'black',
+        strokeWidth: 4,
+        draggable: true
+    });
+    rotate_control_point.on("mouseenter", mouse.pointer);
+    rotate_control_point.on("mouseleave", mouse.default);
+    rotate_control_point.on("dragmove", () => {
+        rotate_control_point.x(0);
+        rotate_control_point.y(min(max(rotate_control_point.y(), 0), base_size * 2.5 / stage.scaleY()));
+        if (focussing_shape != main_rect) {
+            focussing_shape.rotation(rotate_control_point.y() / (base_size * 2.5 / stage.scaleY()) * 360 - 180);
+            transform_focus_rect();
+        }
+    });
+
+    rotate_control_group.add(rotate_control_point);
+    transform_control_group.add(rotate_control_group);
+}
 const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, null] => {
     let x = 0;
     const tmp: [Konva.Group, Words, null] = [new Konva.Group({
+        x: stage.width() / 2 / stage.scaleX(),
         offsetY: -base_size / 2 / stage.scaleX(),
         offsetX: -stage.width() / 2 / stage.scaleX(),
     }), new Words(), null];
@@ -236,24 +349,31 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
             main_layer.add(t.text);
             t.text.absolutePosition(stage.getPointerPosition() ?? {x: 0, y: 0});
         });
-        t.text.on("dragend",()=>{
-            if (t.text.y() <= base_size / stage.scaleX()){
+        t.text.on("dragmove", () => {
+            t.text.y(min(t.text.y(), (stage.height() - base_size) / stage.scaleY()));
+            if (t.text.y() > base_size / stage.scaleY()) t.text.x(max(min(t.text.x(), (stage.width() * 8 / 9) / stage.scaleX()), stage.width() / 9 / stage.scaleX()));
+
+        })
+        t.text.on("dragend", () => {
+            if (t.text.y() <= base_size / stage.scaleX()) {
                 tmp[0].add(t.text);
                 t.text.y(0);
-                t.text.x(tmp[1].positions[t.index])
-            }
-        })
+                t.text.x(tmp[1].positions[t.index]);
+                if (focussing_shape == t.text) change_focus(main_rect);
+            } else change_focus(t.text);
+        });
+        t.text.on("click", () => change_focus(t.text));
         t.text.on("mouseover", () => {
             mouse.pointer();
             if (t.text.parent == main_layer) return;
-            t.text.scale({x: 1.2, y: 1.2});
+            t.text.scale({x: .55, y: .55});
         });
         t.text.on("mouseout", () => {
             mouse.default();
             if (t.text.parent == main_layer) return;
-            t.text.scale({x: 1, y: 1})
+            t.text.scale({x: .5, y: .5});
         });
-        x += t.setPos(x) + 10 / stage.scaleX();
+        x += t.setPos(x) + 10;
         tmp[0].add(t.text);
         tmp[1].add(t);
         p = p.next;
@@ -267,11 +387,37 @@ const change_words_mode = (new_mode: number) => {
         else words_groups[i][0].show();
     }
 }
-
+const change_focus = (new_focussing_shape: Konva.Rect | Konva.Text) => {
+    if (focussing_shape) focussing_shape.off("dragmove.focus");
+    focussing_shape = new_focussing_shape;
+    transform_focus_rect();
+     focussing_shape.on("dragmove.focus", transform_focus_rect);
+    if (!rotate_control_point || !size_control_point) return;
+    rotate_control_point.y((focussing_shape.rotation() + 180) / 360 * (base_size * 2.5 / stage.scaleY()));
+    size_control_point.y((focussing_shape.scaleX() - .1) / 1.9 * (base_size * 2.5 / stage.scaleY()));
+}
+const transform_focus_rect = () => {
+    console.log("transform_focus_rect");
+    // resize
+    focus_rect.width(focussing_shape.width() * focussing_shape.scaleX() + 8 / stage.scaleX());
+    focus_rect.height(focussing_shape.height() * focussing_shape.scaleY() + 8 / stage.scaleY());
+    // movement
+    focus_rect.absolutePosition(focussing_shape.getAbsolutePosition());
+    // rotate
+    focus_rect.rotation(focussing_shape.getAbsoluteRotation());
+    // offset
+    focus_rect.offsetX(focussing_shape.offsetX() * focussing_shape.scaleX() + 4 / stage.scaleX());
+    focus_rect.offsetY(focussing_shape.offsetY() * focussing_shape.scaleY() + 4 / stage.scaleY());
+}
 let base_size: number;
 let stage: Konva.Stage;
 let main_layer: Konva.Layer;
+let main_rect: Konva.Rect;
 let progress_point: Konva.Circle;
 let words_mode = 2;
 let words_groups: [Konva.Group, Words, Konva.Tween | null][] = [];
 let progressbar_dragging = false;
+let focussing_shape: Konva.Rect | Konva.Text;
+let focus_rect: Konva.Rect;
+let rotate_control_point: Konva.Circle;
+let size_control_point: Konva.Circle;
