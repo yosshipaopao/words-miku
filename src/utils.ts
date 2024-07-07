@@ -1,5 +1,5 @@
 import Konva from "konva";
-import type {IWord} from "textalive-app-api";
+import type {ITextUnit} from "textalive-app-api";
 
 export function min(a: number, b: number) {
     return a < b ? a : b;
@@ -24,34 +24,22 @@ export const new_up_text = (t: string): Konva.Text => {
     });
     text.offsetX(text.width() / 2);
     text.offsetY(text.height() / 2);
-    text.on("mouseover", () => {
-        mouse.pointer();
-        text.scale({
-            x: 1.2,
-            y: 1.2
-        });
-    });
-    text.on("mouseout", () => {
-        mouse.default();
-        text.scale({
-            x: 1,
-            y: 1
-        })
-    });
     return text;
 }
 
 export class Word {
     text: Konva.Text;
-    word: IWord;
+    word: ITextUnit;
+    index:number;
 
     get time() {
         return this.word.startTime;
     }
 
-    constructor(word: IWord) {
+    constructor(word: ITextUnit,index:number) {
         this.word = word;
         this.text = new_up_text(word.text);
+        this.index = index;
     }
 
     setPos(x: number): number {
@@ -64,6 +52,10 @@ export class Words {
     words: Word[] = [];
     times: number[] = [];
     positions: number[] = [];
+
+    get count(){
+        return this.words.length;
+    }
 
     constructor() {
     }
