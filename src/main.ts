@@ -3,6 +3,8 @@ import {min, max, Word, Words, mouse, colors} from "./utils.ts";
 import {IChar, IPhrase, IWord, Player} from "textalive-app-api";
 import Konva from "konva";
 import type {IPlayerApp, IVideo} from "textalive-app-api";
+import hexRgb from "hex-rgb";
+import rgbHex from "rgb-hex";
 
 window.onresize = () => {
     if (stage) {
@@ -91,6 +93,90 @@ player.addListener({
         change_words_mode(words_mode);
         console.log(words_groups);
         stage.add(main_layer);
+
+        displaying_words_layer = new Konva.Layer({
+            clipX: stage.width() / 9 / stage.scaleX(),
+            clipY: stage.height() / 9 / stage.scaleY(),
+            clipWidth: stage.width() * 7 / 9 / stage.scaleX(),
+            clipHeight: stage.height() * 7 / 9 / stage.scaleY()
+        });
+        stage.add(displaying_words_layer);
+
+        color_canvas_layer = new Konva.Layer();
+        const canvas_layer_bg = new Konva.Rect({
+            width: stage.width() / stage.scaleX(),
+            height: stage.height() / stage.scaleY(),
+            fill: "#000000aa",
+        });
+        color_canvas_layer.hide();
+        canvas_layer_bg.on("click", ()=>{
+            color_canvas_layer.hide();
+        });
+        color_canvas_layer.add(canvas_layer_bg);
+        const color_canvas_group = new Konva.Group({
+            x: stage.width() / 4 / stage.scaleX(),
+            y: stage.height() / 4 / stage.scaleY()
+        });
+        const color_canvas_window_rect = new Konva.Rect({
+            width: stage.width() / 2 / stage.scaleX(),
+            height: stage.height() / 2 / stage.scaleY(),
+            fill: "white",
+            stroke: "black",
+            strokeWidth: 10,
+            cornerRadius: 20
+        });
+        color_canvas_group.add(color_canvas_window_rect);
+        color_canvas_rect = new Konva.Rect({
+            x: stage.width() / 16 /stage.scaleX(),
+            y: stage.width() / 16 /stage.scaleY(),
+            width: stage.width()  / 6 /stage.scaleX(),
+            height: stage.width() / 6 /stage.scaleY(),
+            fill: "white",
+            stroke: "black",
+            strokeWidth: 10
+        });
+        color_canvas_group.add(color_canvas_rect);
+        color_canvas_layer.add(color_canvas_group);
+        for(const i of [0,1,2]) {
+            const r_group = new Konva.Group({
+                x: (stage.width() / 3.5 + stage.width() / 15 * i) / stage.scaleX(),
+                y: stage.width() / 16 / stage.scaleY()
+            });
+            const r_bar = new Konva.Line({
+                points: [0, 0, 0, base_size * 2.5 / stage.scaleY()],
+                stroke: 'red',
+                strokeWidth: 10,
+                lineCap: 'round',
+                lineJoin: 'round',
+            })
+            r_group.add(r_bar);
+            const r_point = new Konva.Circle({
+                width: base_size * .4 / stage.scaleX(),
+                height: base_size * .4 / stage.scaleY(),
+                fill: 'white',
+                stroke: 'black',
+                strokeWidth: 4,
+                draggable: true
+            });
+            r_point.on("mouseenter", mouse.pointer);
+            r_point.on("mouseleave", mouse.default);
+            r_point.on("dragmove", () => {
+                r_point.x(0);
+                r_point.y(min(max(r_point.y(), 0), base_size * 2.5 / stage.scaleY()));
+                if(!selected_color_rect)return;
+                const rgb = hexRgb(selected_color_rect.fill().toString(),{format:"array"});
+                rgb[i] = r_point.y() / (base_size * 2.5 / stage.scaleY()) * 255;
+                const hex = "#"+rgbHex(rgb[0],rgb[1],rgb[2],rgb[3]);
+                selected_color_rect.fill(hex);
+                color_canvas_rect.fill(hex);
+                if(focussing_shape)focussing_shape.fill(hex);
+            });
+            r_group.add(r_point);
+            color_canvas_points.push(r_point);
+            color_canvas_group.add(r_group);
+        }
+
+        stage.add(color_canvas_layer);
     },
 });
 
@@ -176,6 +262,29 @@ const make_control = (control_group: Konva.Group) => {
         if (player.video) player.isPlaying ? player.requestPause() : player.requestPlay();
     });
     control_group.add(play_button);
+    const capture_button = new Konva.Circle({
+        width: base_size * .8 / stage.scaleX(),
+        height: base_size * .8 / stage.scaleX(),
+        x: stage.width() * 8.5 / 9 / stage.scaleX(),
+        fill: 'white',
+        stroke: 'black',
+        strokeWidth: 4 / stage.scaleX(),
+    });
+    capture_button.on("mouseover", mouse.pointer);
+    capture_button.on("mouseout", mouse.default);
+    capture_button.on("click", () => {
+        main_rect.strokeEnabled(false);
+        change_focus(main_rect);
+        (document.getElementById("img") as HTMLImageElement).src = stage.toDataURL({
+            width: stage.width() * 7 / 9,
+            height: stage.height() * 7 / 9,
+            x: stage.width() / 9,
+            y: base_size,
+            pixelRatio: Math.ceil(1920 / stage.width())
+        });
+        main_rect.strokeEnabled(true);
+    });
+    control_group.add(capture_button);
 
     const audio_control = new Konva.Group({
         x: stage.width() * 7 / 9 / stage.scaleX()
@@ -260,8 +369,11 @@ const make_colorpalet = (colorpalet_group: Konva.Group) => {
         rect.on("mouseenter", mouse.pointer);
         rect.on("mouseleave", mouse.default);
         rect.on("click", () => {
-            focussing_shape.fill(color);
-        })
+            focussing_shape.fill(rect.fill());
+        });
+        rect.on("dblclick",()=>{
+            open_color_canvas(rect);
+        });
         colorpalet_group.add(rect);
     }
 }
@@ -344,9 +456,14 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
     while (p) {
         const t = new Word(p, tmp[1].count);
         t.text.on("pointerdown", () => {
-            if (t.text.parent == main_layer) return;
+            if (t.text.parent == displaying_words_layer) return;
             t.text.remove();
-            main_layer.add(t.text);
+            displaying_words_layer.add(t.text);
+            if (focussing_shape != main_rect) {
+                t.text.fill(focussing_shape.fill());
+                t.text.rotation(focussing_shape.rotation());
+                t.text.scale(focussing_shape.scale());
+            }
             t.text.absolutePosition(stage.getPointerPosition() ?? {x: 0, y: 0});
         });
         t.text.on("dragmove", () => {
@@ -359,18 +476,21 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
                 tmp[0].add(t.text);
                 t.text.y(0);
                 t.text.x(tmp[1].positions[t.index]);
+                t.text.fill("green");
+                t.text.rotation(0);
+                t.text.scale({x: .6, y: .6});
                 if (focussing_shape == t.text) change_focus(main_rect);
             } else change_focus(t.text);
         });
         t.text.on("click", () => change_focus(t.text));
         t.text.on("mouseover", () => {
             mouse.pointer();
-            if (t.text.parent == main_layer) return;
+            if (t.text.parent == displaying_words_layer) return;
             t.text.scale({x: .55, y: .55});
         });
         t.text.on("mouseout", () => {
             mouse.default();
-            if (t.text.parent == main_layer) return;
+            if (t.text.parent == displaying_words_layer) return;
             t.text.scale({x: .5, y: .5});
         });
         x += t.setPos(x) + 10;
@@ -391,13 +511,12 @@ const change_focus = (new_focussing_shape: Konva.Rect | Konva.Text) => {
     if (focussing_shape) focussing_shape.off("dragmove.focus");
     focussing_shape = new_focussing_shape;
     transform_focus_rect();
-     focussing_shape.on("dragmove.focus", transform_focus_rect);
+    focussing_shape.on("dragmove.focus", transform_focus_rect);
     if (!rotate_control_point || !size_control_point) return;
     rotate_control_point.y((focussing_shape.rotation() + 180) / 360 * (base_size * 2.5 / stage.scaleY()));
     size_control_point.y((focussing_shape.scaleX() - .1) / 1.9 * (base_size * 2.5 / stage.scaleY()));
 }
 const transform_focus_rect = () => {
-    console.log("transform_focus_rect");
     // resize
     focus_rect.width(focussing_shape.width() * focussing_shape.scaleX() + 8 / stage.scaleX());
     focus_rect.height(focussing_shape.height() * focussing_shape.scaleY() + 8 / stage.scaleY());
@@ -409,10 +528,18 @@ const transform_focus_rect = () => {
     focus_rect.offsetX(focussing_shape.offsetX() * focussing_shape.scaleX() + 4 / stage.scaleX());
     focus_rect.offsetY(focussing_shape.offsetY() * focussing_shape.scaleY() + 4 / stage.scaleY());
 }
+const open_color_canvas = (rect:Konva.Rect)=>{
+    selected_color_rect = rect;
+    const rgb = hexRgb(selected_color_rect.fill().toString(),{format:"array"});
+    color_canvas_rect.fill(rect.fill());
+    for(let i=0;i<3;i++)color_canvas_points[i].y(rgb[i]/255*(base_size * 2.5 / stage.scaleY()));
+    color_canvas_layer.show();
+}
 let base_size: number;
 let stage: Konva.Stage;
 let main_layer: Konva.Layer;
 let main_rect: Konva.Rect;
+let displaying_words_layer: Konva.Layer;
 let progress_point: Konva.Circle;
 let words_mode = 2;
 let words_groups: [Konva.Group, Words, Konva.Tween | null][] = [];
@@ -421,3 +548,12 @@ let focussing_shape: Konva.Rect | Konva.Text;
 let focus_rect: Konva.Rect;
 let rotate_control_point: Konva.Circle;
 let size_control_point: Konva.Circle;
+let color_canvas_layer: Konva.Layer;
+let color_canvas_rect: Konva.Rect;
+let color_canvas_points: Konva.Circle[] = [];
+let selected_color_rect: Konva.Rect;
+
+// todo フォント選択
+// todo 補助ライン
+// todo 曲選択
+// todo シェア

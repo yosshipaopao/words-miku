@@ -23,6 +23,7 @@ export const new_up_text = (t: string): Konva.Text => {
         fontFamily: 'Calibri',
         fill: 'green',
         draggable: true,
+        closed: true
         //rotation: 45
     });
     text.offsetX(text.width() / 2);
@@ -103,8 +104,8 @@ export class Words {
 }
 
 export const colors = [
-    "white",
-    "black",
+    "#ffffff",
+    "#000000",
     "#008899",
     "#dd88bb",
     "#eeaa00",
