@@ -4,30 +4,42 @@
     <meta charset="UTF-8"/>
     <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Vite + TS</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-
-        #app {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #media {
-            position: fixed;
-        }
-    </style>
+    <title>Words Miku</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css?family=M+PLUS+1p" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kurenaido" rel="stylesheet">
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+    <label for="song_select">曲を選択してください:</label>
+    <select id="song_select"></select>
+    <button id="song_select_btn">OK</button>
+</div>
 <div id="media"></div>
-<img id="img" src="" alt="image"/>
+<div id="bg" style="display:none;"></div>
+<div id="share" style="display: none;">
+    <div id="content">
+        <div id="bar">
+            <div></div>
+            <div>
+                <button id="save_btn">SAVE</button>
+            </div>
+            <div>
+                <button id="copy_btn">COPY</button>
+            </div>
+            <div>
+                <button id="share_btn">SHARE</button>
+            </div>
+            <div></div>
+        </div>
+        <div id="img_holder">
+            <img id="img" src="" alt=""/>
+        </div>
+    </div>
+</div>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
