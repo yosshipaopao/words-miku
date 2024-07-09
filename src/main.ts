@@ -556,7 +556,7 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
                 tmp[0].add(t.text);
                 t.text.y(0);
                 t.text.x(tmp[1].positions[t.index]);
-                t.text.fill("green");
+                t.text.fill("#000000");
                 t.text.rotation(0);
                 t.text.scale({x: .6, y: .6});
                 if (focussing_shape == t.text) change_focus(main_rect);
@@ -671,7 +671,19 @@ copy_btn.onclick = async () => {
     ]);
 }
 
-share_btn.onclick = () => {
-    window.open("https://x.com/");
+share_btn.onclick = async () => {
+    try{
+        const res = await fetch(img_el.src);
+        const blob = await res.blob();
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                [blob.type]: blob
+            })
+        ]);
+    }catch (e){
+        console.error(e);
+    }
+    const url = `https://x.com/share?url=${location.href}&text=WordsMikuでリリックカードを作成しました！&hashtags=WordsMiku`
+    window.open(encodeURI(url));
 }
 

@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8"/>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Words Miku</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,9 +13,23 @@
 </head>
 <body>
 <div id="app">
-    <label for="song_select">曲を選択してください:</label>
-    <select id="song_select"></select>
-    <button id="song_select_btn">OK</button>
+    <div style="display: flex;flex-direction:column;justify-content:end;">
+        <div style="height: auto;">
+            <label for="song_select">曲を選択してください:</label>
+            <select id="song_select"></select>
+            <button id="song_select_btn">OK</button>
+        </div>
+    </div>
+    <div>
+        <img src="/tutorial.png" alt="tutorial" id="tutorial"/>
+    </div> 
+    <div>
+        <p>上のバーからキャンバスに配置したい文字をドラッグして、クリックして、選択状態にすることで色、サイズ、回転、フォント等が変更できます。</p>
+        <p>すでに文字を選択している状態で新たに文字をドラッグすると元の文字のスタイルが適用されます。</p>
+        <p>色変更の色の部分をダブルクリックすると色を変更できます。</p>
+        <p>ワードグループ変更を押すと、流れてくる文字を、文字ごと、単語ごと、小節ごとのグループに変更できます。</p>
+        <p>すべて終わったら保存ボタンを押すことで、画像の保存、コピー、シェアができます。</p>
+    </div>
 </div>
 <div id="media"></div>
 <div id="bg" style="display:none;"></div>
