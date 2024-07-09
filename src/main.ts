@@ -110,7 +110,7 @@ player.addListener({
             fill: "#000000aa",
         });
         color_canvas_layer.hide();
-        canvas_layer_bg.on("click", () => {
+        canvas_layer_bg.on("click tap", () => {
             color_canvas_layer.hide();
         });
         color_canvas_layer.add(canvas_layer_bg);
@@ -246,7 +246,7 @@ const make_control = (control_group: Konva.Group) => {
     });
     change_mode_group.on("mouseover", mouse.pointer);
     change_mode_group.on("mouseout", mouse.default);
-    change_mode_group.on("click", () => {
+    change_mode_group.on("click tap", () => {
         change_words_mode((words_mode + 1) % 3);
     });
     const change_mode_button = new Konva.Circle({
@@ -274,7 +274,7 @@ const make_control = (control_group: Konva.Group) => {
     })
     play_group.on("mouseover", mouse.pointer);
     play_group.on("mouseout", mouse.default);
-    play_group.on("click", () => {
+    play_group.on("click tap", () => {
         if (player.video) player.isPlaying ? player.requestPause() : player.requestPlay();
     });
     const play_button = new Konva.Circle({
@@ -301,7 +301,7 @@ const make_control = (control_group: Konva.Group) => {
     });
     capture_group.on("mouseover", mouse.pointer);
     capture_group.on("mouseout", mouse.default);
-    capture_group.on("click", () => {
+    capture_group.on("click tap", () => {
         main_rect.strokeEnabled(false);
         change_focus(main_rect);
         img_el.src = stage.toDataURL({
@@ -415,10 +415,10 @@ const make_colorpalet = (colorpalet_group: Konva.Group) => {
         });
         rect.on("mouseenter", mouse.pointer);
         rect.on("mouseleave", mouse.default);
-        rect.on("click", () => {
+        rect.on("click tap", () => {
             focussing_shape.fill(rect.fill());
         });
-        rect.on("dblclick", () => {
+        rect.on("dblclick dbltap", () => {
             open_color_canvas(rect);
         });
         colorpalet_group.add(rect);
@@ -434,7 +434,7 @@ const make_font_control = (font_control_group: Konva.Group) => {
         });
         group.on("mouseenter", mouse.pointer);
         group.on("mouseleave", mouse.default);
-        group.on("click", () => {
+        group.on("click tap", () => {
             if (focussing_shape == main_rect) return;
             (focussing_shape as Konva.Text).fontFamily(font);
         });
@@ -534,7 +534,7 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
     }), new Words(), null];
     while (p) {
         const t = new Word(p, tmp[1].count);
-        t.text.on("pointerdown", () => {
+        t.text.on("pointerdown touchstart", () => {
             if (t.text.parent == displaying_words_layer) return;
             t.text.remove();
             displaying_words_layer.add(t.text);
@@ -562,7 +562,7 @@ const create_words_group = (p: IPhrase | IWord | IChar): [Konva.Group, Words, nu
                 if (focussing_shape == t.text) change_focus(main_rect);
             } else change_focus(t.text);
         });
-        t.text.on("click", () => change_focus(t.text));
+        t.text.on("click tap", () => change_focus(t.text));
         t.text.on("mouseover", () => {
             mouse.pointer();
             if (t.text.parent == displaying_words_layer) return;
